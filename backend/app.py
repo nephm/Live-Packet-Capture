@@ -1,10 +1,61 @@
 from flask import Flask, jsonify, render_template_string
 import threading, time
-from scapy.all import sniff
+from scapy.all import sniff, IP, TCP, UDP, ICMP, DNS
+from collections import defaultdict, Counter
 
 app = Flask(__name__)
 
 events = []   # simple in-memory log
+
+stats = {
+    'total_packets': 0,
+    'packets_sent': 0,
+    'packets_received': 0,
+    'unique_IPs': set(),
+    'bytes_sent': 0,
+    'bytes_received': 0,
+    'protocol_count': defaultdict(int),
+    'top_sources': Counter(),
+    'top_destinations': Counter(),
+    'start_time': time.time()
+}
+
+def get_protocol(pkt):
+    '''Extract protocol name'''
+    if pkt.haslayer(TCP):
+        sport, dport = pkt[TCP].sport, pkt[TCP].dport
+        if sport == 80 or dport == 80:
+            return 'HTTP'
+        elif sport == 443 or dport == 443:
+            return 'HTTPS'
+        elif sport == 53 or dport == 53:
+            return 'DNS'
+        elif sport == 21 or dport == 21:
+            return 'FTP'
+        elif sport == 22 or dport == 22:
+            return 'SSH'
+        elif sport == 25 or dport == 25:
+            return 'SMTP'
+        elif sport == 23 or dport == 23:
+            return 'TELNET'
+        else:
+            return 'TCP'
+    elif pkt.haslayer(UDP):
+        sport, dport = pkt[UDP].sport, pkt[UDP].dport
+        if sport == 53 or dport == 53:
+            return 'DNS'
+        elif sport == 67 or dport == 67 or sport == 68 or dport == 68:
+            return 'DHCP'
+        elif sport == 123 or dport == 123:
+            return 'NTP'
+        else:
+            return 'UDP'
+    elif pkt.haslayer(ICMP):
+        return 'ICMP'
+    elif pkt.haslayer(DNS):
+        return 'DNS'
+    else:
+        return 'Other'
 
 def packet_handler(pkt):
     try:
@@ -23,20 +74,7 @@ def packet_handler(pkt):
 def start_sniffer():
     sniff(prn=packet_handler, store=False)
 
-@app.route("/")
-def dashboard():
-    rows = "".join(
-        f"<tr><td>{e['time']}</td><td>{e['src']}</td><td>{e['dst']}</td><td>{e['proto']}</td></tr>"
-        for e in reversed(events)
-    )
-    html = f"""
-    <h2>Packet Log</h2>
-    <table border="1" cellpadding="4">
-      <tr><th>Time</th><th>Source</th><th>Destination</th><th>Proto</th></tr>
-      {rows}
-    </table>
-    """
-    return html
+
 
 @app.route("/events")
 def get_events():
