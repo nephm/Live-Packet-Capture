@@ -1,4 +1,4 @@
-import React, {use, useEffect, useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import StatsCards from './StatsCards';
 import PacketTable from './PacketTable';
 import Chart from './Charts';
@@ -26,7 +26,7 @@ function Dashboard() {
     // Fetch stats from backend
     const fetchStats = async () => {
         try {
-            const res = await fetch('http://localhost:8000/stats');
+            const res = await fetch('https://localhost:8000/stats');
             if (res.ok){
                 const data = await res.json();
                 setStats(data);
@@ -86,10 +86,10 @@ function Dashboard() {
 
     return(
         <>
-        <header classname='app-header'>
+        <header className='app-header'>
             <h1>🌐 Network Packet Analyzer</h1>
             <div className='connection-status'>
-                <span classname={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+                <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
                 </span>
                 <span clasName="last-updated">
@@ -99,7 +99,7 @@ function Dashboard() {
             </div>
         </header>
         
-        <main classname='dashboard'>
+        <main className='dashboard'>
                 <StatsCards stats={stats} />
                 <Charts
                     stats={stats}
