@@ -1,5 +1,5 @@
 import React from 'react';
-import './App.css';
+
 
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer   
@@ -17,12 +17,12 @@ const PROTO_COLORS = {
     OTHER: '#95a5a6'
 };
 
-function Chart({stats, packetHistory}) {
+function Charts({stats, packetHistory}) {
 
     const protocolData = Object.entries(stats.protocols_count).map(([protocol, count]) => ({
         name: protocol,
         value: count,
-        color: PROTOCOL_COLORS[protocol] || '#95a5a6'
+        color: PROTO_COLORS[protocol] || '#95a5a6'
     }));
 
     //top sources data for bar chart
