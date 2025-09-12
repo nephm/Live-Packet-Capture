@@ -1,5 +1,4 @@
 import React from 'react';
-import './App.css';
 
 //Colors for charts
 const PROTO_COLORS = {

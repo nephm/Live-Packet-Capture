@@ -2,7 +2,7 @@ import React, {useEffect, useState} from 'react';
 import StatsCards from './StatsCards';
 import PacketTable from './PacketTable';
 import Charts from './Charts';
-import './App.css';
+
 
 function Dashboard() {
     const [stats, setStats] = useState({
