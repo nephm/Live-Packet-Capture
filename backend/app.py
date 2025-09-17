@@ -10,6 +10,10 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000"])
 
 events = []   # simple in-memory log
+alerts = []
+connections = []
+
+
 
 stats = {
     'total_packets': 0,
@@ -28,34 +32,73 @@ def get_protocol(pkt):
     '''Extract protocol name'''
     if pkt.haslayer(TCP):
         sport, dport = pkt[TCP].sport, pkt[TCP].dport
-        if sport == 80 or dport == 80:
-            return 'HTTP'
-        elif sport == 443 or dport == 443:
-            return 'HTTPS'
-        elif sport == 53 or dport == 53:
-            return 'DNS'
-        elif sport == 21 or dport == 21:
-            return 'FTP'
-        elif sport == 22 or dport == 22:
-            return 'SSH'
-        elif sport == 25 or dport == 25:
-            return 'SMTP'
-        elif sport == 23 or dport == 23:
-            return 'TELNET'
-        else:
-            return 'TCP'
+        # if sport == 80 or dport == 80:
+        #     return 'HTTP'
+        # elif sport == 443 or dport == 443:
+        #     return 'HTTPS'
+        # elif sport == 53 or dport == 53:
+        #     return 'DNS'
+        # elif sport == 21 or dport == 21:
+        #     return 'FTP'
+        # elif sport == 22 or dport == 22:
+        #     return 'SSH'
+        # elif sport == 25 or dport == 25:
+        #     return 'SMTP'
+        # elif sport == 23 or dport == 23:
+        #     return 'TELNET'
+        # else:
+        #     return 'TCP'
+        port = sport if sport < dport else dport
+        match port:
+            case 21: return 'FTP'
+            case 22: return 'SSH'
+            case 23: return 'TELNET'
+            case 25: return 'SMTP'
+            case 53: return 'DNS'
+            case 80: return 'HTTP'
+            case 110: return 'POP3'
+            case 143: return 'IMAP'
+            case 443: return 'HTTPS'
+            case 993: return 'IMAPS'
+            case 995: return 'POP3S'
+            case 3389: return 'RDP'
+            case 5432: return 'PostgreSQL'
+            case 3306: return 'MySQL'
+            case 1521: return 'Oracle'
+            case 1433: return 'MSSQL'
+            case _: return 'TCP'
+
     elif pkt.haslayer(UDP):
         sport, dport = pkt[UDP].sport, pkt[UDP].dport
-        if sport == 53 or dport == 53:
-            return 'DNS'
-        elif sport == 67 or dport == 67 or sport == 68 or dport == 68:
-            return 'DHCP'
-        elif sport == 123 or dport == 123:
-            return 'NTP'
-        else:
-            return 'UDP'
+        # if sport == 53 or dport == 53:
+        #     return 'DNS'
+        # elif sport == 67 or dport == 67 or sport == 68 or dport == 68:
+        #     return 'DHCP'
+        # elif sport == 123 or dport == 123:
+        #     return 'NTP'
+        # else:
+        #     return 'UDP'
+        port = sport if sport < dport else dport
+        match port:
+            case 53: return 'DNS'
+            case 67 | 68: return 'DHCP'
+            case 123: return 'NTP'
+            case 161 | 162: return 'SNMP'
+            case 514: return 'SYSLOG'
+            case 1194: return 'OpenVPN'
+            case _: return 'UDP'
+
     elif pkt.haslayer(ICMP):
-        return 'ICMP'
+        icmp_type = pkt[ICMP].type
+        match icmp_type:
+            case 0: return 'ICMP Echo Reply'
+            case 3: return 'ICMP Dest Unreachable'
+            case 8: return 'ICMP Echo Request'
+            case 11: return 'ICMP Time Exceeded'
+            case _: return 'ICMP'
+
+    elif pkt.haslayer(ARP):
+        return 'ARP'
     elif pkt.haslayer(DNS):
         return 'DNS'
     else:
