@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, render_template_string
 from flask_cors import CORS
-import threading, time
-from scapy.all import sniff, IP, TCP, UDP, ICMP, DNS
+import threading, time, platform, sys
+from scapy.all import sniff, IP, TCP, UDP, ICMP, DNS, get_if_list
 from collections import defaultdict, Counter
+import psutil
+import os
 
 app = Flask(__name__)
 
@@ -10,6 +12,9 @@ app = Flask(__name__)
 CORS(app, origins=["http://localhost:3000"])
 
 events = []   # simple in-memory log
+sniffer_running = False
+sniffer_error = None
+current_os = platform.system()
 
 stats = {
     'total_packets': 0,
@@ -23,6 +28,57 @@ stats = {
     'top_destinations': Counter(),
     'start_time': time.time()
 }
+
+def check_admin_privileges():
+    '''Check if the script is running with admin/root privileges'''
+    if current_os == "Windows":
+        try:
+            import ctypes
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except:
+            return False
+    else:
+        return os.geteuid() == 0
+    
+def get_interface():
+    '''Get the netwrok interface for different os'''
+    try:
+        interfaces = get_if_list()
+        print(f"Available interfaces: {interfaces}")
+
+        for iface in ['en0', 'en1', 'wlan0', 'eth0']:
+            if iface in interfaces:
+                try:
+                    net_stats = psutil.net_if_stats()
+                    if iface in net_stats and net_stats[iface].isup:
+                        print(f"Using interface: {iface}")
+                        return iface
+                except:
+                    continue
+        
+        # fallback to first active interface
+        for iface in interfaces:
+            if not iface.startswith(('lo', 'Loopback')):
+                if iface in net_stats and net_stats[iface].isup:
+                    print(f"Using fallback interface: {iface}")
+                    return iface
+        return None
+    except Exception as e:      
+        print(f"Error getting interfaces: {e}")
+        return None         
+        # get network interface stats
+        # net_stats = psutil.net_if_stats()
+        # net_io = psutil.net_if_addrs()
+
+        # Platform specific defaults
+        # if current_os == "Windows":
+        #     priority_list = ['Ethernet', 'Wi-Fi', 'Local Area Connection', 'Wireless Network Connection', 'Intel']
+        # elif current_os == "Darwin":
+        #     priority_list = ['en0', 'en1', 'en2', 'en3']
+        # else:
+        #     priority_list = ['eth0', 'wlan0', 'ens', 'enp', 'wlp']
+
+        # 
 
 def get_protocol(pkt):
     '''Extract protocol name'''
@@ -113,11 +169,25 @@ def packet_handler(pkt):
                 events.pop(0)
  
     except Exception as e:
-        pass
+        print(f"Error processing packet: {e}")
 
 def start_sniffer():
     try:
-        sniff(prn=packet_handler, store=False)
+
+        if not check_admin_privileges():
+            print("Error: This script requires administrative/root privileges to run.")
+            return
+        interface = get_interface()
+        if not interface:
+            sniffer_error = "No suitable network interface found or interface is down."
+            print(f"Error: {sniffer_error}")
+            return
+
+        print(f"Starting packet capture on interface: {interface}")
+        sniffer_running = True
+        sniffer_error = None
+
+        sniff(iface=interface, prn=packet_handler, store=False)
     except Exception as e:
         print(f"Error starting sniffer: {e}")
 
@@ -153,6 +223,19 @@ def health_check():
     })
 
 if __name__ == "__main__":
+    print("=== Network Packet Analyzer ===")
+    print(f"Running as user ID: {os.geteuid()}")
+    
+    # Show available interfaces
+    try:
+        interfaces = get_if_list()
+        print("Available network interfaces:")
+        for i, iface in enumerate(interfaces, 1):
+            print(f"  {i}. {iface}")
+    except Exception as e:
+        print(f"Could not list interfaces: {e}")
+
+
     # run sniffer in background thread
     print("Starting sniffer...")
     t = threading.Thread(target=start_sniffer, daemon=True)
