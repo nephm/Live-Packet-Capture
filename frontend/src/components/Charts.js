@@ -1,4 +1,5 @@
 import React from 'react';
+import '../App.css';
 
 
 import {
@@ -19,15 +20,15 @@ const PROTO_COLORS = {
 
 function Charts({stats, packetHistory}) {
 
-    const protocolData = Object.entries(stats.protocols_count).map(([protocol, count]) => ({
+    const protocolData = stats?.protocols_count ? Object.entries(stats.protocols_count).map(([protocol, count]) => ({
         name: protocol,
         value: count,
         color: PROTO_COLORS[protocol] || '#95a5a6'
-    }));
+    })) : [];
 
     //top sources data for bar chart
     const topSources = (stats.top_sources || []).slice(0, 5).map(([ip, count]) => ({
-        ip: ip.length > 15 ? ip.subString(0, 12) + '...' : ip,
+        ip: ip.length > 15 ? ip.substring(0, 12) + '...' : ip,
         fullIp: ip,
         packets: count
     }));

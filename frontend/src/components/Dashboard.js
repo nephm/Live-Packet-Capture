@@ -1,4 +1,5 @@
 import React, {useEffect, useState} from 'react';
+import '../App.css';
 import StatsCards from './StatsCards';
 import PacketTable from './PacketTable';
 import Charts from './Charts';
@@ -27,7 +28,7 @@ function Dashboard() {
     // Fetch stats from backend
     const fetchStats = async () => {
         try {
-            const res = await fetch('https://localhost:8000/stats', {
+            const res = await fetch('http://localhost:8000/stats', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json',} 
             });
@@ -61,7 +62,7 @@ function Dashboard() {
     //fetch recent packets from backend
     const fetchRecentPackets = async () =>{
         try {
-            const res = await fetch('https://localhost:8000/events', {
+            const res = await fetch('http://localhost:8000/events', {
                 method: 'GET',
                 headers: { 'Content-Type': 'application/json',} 
             });
@@ -101,7 +102,7 @@ function Dashboard() {
                 <span className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
                     {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
                 </span>
-                <span clasName="last-updated">
+                <span className="last-updated">
                     Last Updated: {lastUpdate.toLocaleTimeString()}
                 </span>
 

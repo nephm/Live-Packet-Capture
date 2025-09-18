@@ -1,4 +1,5 @@
 import React from 'react';
+import '../App.css';
 
 //Colors for charts
 const PROTO_COLORS = {
@@ -50,7 +51,7 @@ function PacketTable({stats, recentPackets}) {
                             </tr>
                         </thead>
                         <tbody>
-                            {(stats.top_sources || []).slice(0, 5).map(([ip, count], index) =>(
+                            {(stats.top_destinations || []).slice(0, 5).map(([ip, count], index) =>(
                                 <tr key={index}>
                                     <td className='ip-cell'>{ip}</td>
                                      <td className='count-cell'>{count}</td>
