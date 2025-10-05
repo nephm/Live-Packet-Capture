@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import '../App.css';
 import StatsCards from './StatsCards';
 import PacketTable from './PacketTable';
@@ -24,26 +24,47 @@ function Dashboard() {
     const [packetHistory, setPacketHistory] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [lastUpdate, setlastUpdate] = useState(new Date());
+    const lastTotalRef = useRef(0);
 
     // Fetch stats from backend
     const fetchStats = async () => {
     	try {
-			const res = await fetch('http://localhost:8000/api/stats');
+            const res = await fetch('/api/stats');
             if (res.ok){
                 const data = await res.json();
-                setStats(data);
+                const normalized = {
+                    totalPackets: data.total_packets,
+                    packets_sent: data.packets_sent,
+                    packets_received: data.packets_received,
+                    filtered_packets: data.filtered_packets,
+                    unique_ips: data.unique_ips,
+                    bytes_sent: data.bytes_sent,
+                    bytes_received: data.bytes_received,
+                    protocols_count: data.protocol_breakdown,
+                    top_sources: data.top_sources,
+                    top_destinations: data.top_destinations,
+                    top_ports: data.top_ports,
+                    uptime_seconds: data.uptime_seconds,
+                    packets_per_second: data.packets_per_second,
+                    avg_packet_size: data.avg_packet_size,
+                    min_packet_size: data.min_packet_size,
+                    max_packet_size: data.max_packet_size,
+                    active_connections: data.active_connections,
+                    total_alerts: data.total_alerts
+                };
+                setStats(normalized);
                 setIsConnected(true);
 
-                //add curr packet count to history for charts
                 const curr = new Date();
+                const delta = Math.max(0, (normalized.totalPackets || 0) - (lastTotalRef.current || 0));
+                lastTotalRef.current = normalized.totalPackets || 0;
                 setPacketHistory(prev => {
                     const newHistory = [ ...prev,{
                         time: curr.toLocaleTimeString(),
-                        packets: data.totalPackets,
+                        packets: delta,
                         timestamp: curr.getTime()
                     }];
-                    //keep only last 20 data
-                    return newHistory.slice(-20);
+                    return newHistory.slice(-60);
                 });
 
                 setlastUpdate(curr);
@@ -59,7 +80,7 @@ function Dashboard() {
     //fetch recent packets from backend
     const fetchRecentPackets = async () =>{
     	try {
-			const res = await fetch('http://localhost:8000/api/events');
+            const res = await fetch('/api/events');
             if (res.ok){
                 const data = await res.json();
                 setRecentPackets(data.slice(0, 20));
