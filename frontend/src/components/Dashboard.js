@@ -21,6 +21,7 @@ function Dashboard() {
     });
 
     const [recentPackets, setRecentPackets] = useState([]);
+    const [alerts, setAlerts] = useState([]);
     const [packetHistory, setPacketHistory] = useState([]);
     const [isConnected, setIsConnected] = useState(false);
     const [lastUpdate, setlastUpdate] = useState(new Date());
@@ -93,15 +94,29 @@ function Dashboard() {
         }
     };
 
+    const fetchAlerts = async () =>{
+        try{
+            const res = await fetch('/api/alerts?limit=5');
+            if(res.ok){
+                const data = await res.json();
+                setAlerts(data);
+            }
+        }catch(err){
+            console.error('Error fetching alerts', err);
+        }
+    }
+
     // set real-time updates
     useEffect(()=>{
 
         fetchStats();
         fetchRecentPackets();
+        fetchAlerts();
 
         const statInterval = setInterval(() =>{
             fetchStats();   
             fetchRecentPackets();
+            fetchAlerts();
         }, 1000); //everysecond
 
         return () =>{
@@ -122,6 +137,11 @@ function Dashboard() {
                 </span>
 
             </div>
+            {alerts.length > 0 && (
+                <div className='alert-banner'>
+                    <span>Alert: {alerts[0].type} - {alerts[0].severity}</span>
+                </div>
+            )}
         </header>
         
         <main className='dashboard'>

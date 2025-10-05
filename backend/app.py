@@ -18,7 +18,7 @@ CURRENT_OS = platform.system()
 HOSTNAME = platform.node()
 
 # Don't capture our own traffic to avoid infinite loops
-MONITORING_PORTS = {8000, 3000, 5000}
+MONITORING_PORTS = {3000, 5000}
 MONITORING_MODE = os.getenv('MONITORING_MODE', 'production')
 
 # Store captured packets (max 1000)
@@ -59,11 +59,11 @@ sniffer_state = {
 
 # Security rules - when to create alerts
 SECURITY_RULES = {
-    'port_scan_threshold': 15,
+    'port_scan_threshold': 6,
     'suspicious_ports': [1234, 4444, 5555, 6666, 8080, 31337],
-    'large_packet_threshold': 1500,
-    'connection_rate_limit': 50,
-    'failed_connection_threshold': 10
+    'large_packet_threshold': 1200,
+    'connection_rate_limit': 20,
+    'failed_connection_threshold': 5
 }
 
 # Keep track of potential attacks
@@ -503,7 +503,7 @@ def start_packet_sniffer():
         print(f"[INFO] Mode: {MONITORING_MODE}")
         print(f"[INFO] Ignoring traffic on ports: {MONITORING_PORTS}")
         
-        bpf_filter = "not port 8000 and not port 3000 and not port 5000"
+        bpf_filter = "not port 3000 and not port 5000"
         
         sniff(
             iface=interface,
