@@ -27,11 +27,8 @@ function Dashboard() {
 
     // Fetch stats from backend
     const fetchStats = async () => {
-        try {
-            const res = await fetch('http://localhost:8000/stats', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json',} 
-            });
+    	try {
+			const res = await fetch('http://localhost:8000/api/stats');
             if (res.ok){
                 const data = await res.json();
                 setStats(data);
@@ -61,11 +58,8 @@ function Dashboard() {
 
     //fetch recent packets from backend
     const fetchRecentPackets = async () =>{
-        try {
-            const res = await fetch('http://localhost:8000/events', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json',} 
-            });
+    	try {
+			const res = await fetch('http://localhost:8000/api/events');
             if (res.ok){
                 const data = await res.json();
                 setRecentPackets(data.slice(0, 20));
