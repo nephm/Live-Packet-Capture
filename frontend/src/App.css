@@ -164,6 +164,47 @@ body {
   gap: 8px;
 }
 
+.btn-export {
+  background: var(--accent-blue);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+.btn-export:hover {
+  background: #2d6ea8;
+}
+
+.export-menu {
+  position: absolute;
+  right: 0;
+  margin-top: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px var(--shadow-hover);
+  overflow: hidden;
+  z-index: 20;
+}
+
+.export-item {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.export-item:hover {
+  background: rgba(52, 127, 196, 0.08);
+}
+
 /* Stat Items */
 .stat-item {
   display: flex;
