@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from flask_cors import CORS
 import threading
 import time
@@ -18,11 +18,11 @@ CURRENT_OS = platform.system()
 HOSTNAME = platform.node()
 
 # Don't capture our own traffic to avoid infinite loops
-MONITORING_PORTS = {8000, 3000, 5000}
+MONITORING_PORTS = {3000, 5000}
 MONITORING_MODE = os.getenv('MONITORING_MODE', 'production')
 
-# Store captured packets (max 1000)
-events = deque(maxlen=1000)
+# Store captured packets (max 10000)
+events = deque(maxlen=10000)
 
 # Store security alerts (max 500)
 alerts = deque(maxlen=500)
@@ -59,11 +59,11 @@ sniffer_state = {
 
 # Security rules - when to create alerts
 SECURITY_RULES = {
-    'port_scan_threshold': 15,
+    'port_scan_threshold': 6,
     'suspicious_ports': [1234, 4444, 5555, 6666, 8080, 31337],
-    'large_packet_threshold': 1500,
-    'connection_rate_limit': 50,
-    'failed_connection_threshold': 10
+    'large_packet_threshold': 1200,
+    'connection_rate_limit': 20,
+    'failed_connection_threshold': 5
 }
 
 # Keep track of potential attacks
@@ -503,7 +503,7 @@ def start_packet_sniffer():
         print(f"[INFO] Mode: {MONITORING_MODE}")
         print(f"[INFO] Ignoring traffic on ports: {MONITORING_PORTS}")
         
-        bpf_filter = "not port 8000 and not port 3000 and not port 5000"
+        bpf_filter = "not port 3000 and not port 5000"
         
         sniff(
             iface=interface,
@@ -680,6 +680,53 @@ def export_capture_data():
         
         return jsonify(export_data)
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route("/api/export_csv")
+def export_capture_csv():
+    try:
+        limit = request.args.get('limit', default=None, type=int)
+        rows = list(events)
+        if limit is not None and limit > 0:
+            rows = rows[-limit:]
+        rows = list(reversed(rows))
+
+        headers = [
+            'time', 'src', 'dst', 'protocol', 'sport', 'dport', 'size',
+            'flags', 'payload_preview', 'src_type', 'dst_type', 'ttl'
+        ]
+
+        def generate():
+            yield ','.join(headers) + '\n'
+            for e in rows:
+                def esc(v):
+                    if v is None:
+                        return ''
+                    s = str(v)
+                    if any(ch in s for ch in [',', '\n', '"']):
+                        s = '"' + s.replace('"', '""') + '"'
+                    return s
+                yield ','.join([
+                    esc(e.get('time')),
+                    esc(e.get('src')),
+                    esc(e.get('dst')),
+                    esc(e.get('protocol')),
+                    esc(e.get('sport')),
+                    esc(e.get('dport')),
+                    esc(e.get('size')),
+                    esc(e.get('flags')),
+                    esc(e.get('payload_preview')),
+                    esc(e.get('src_type')),
+                    esc(e.get('dst_type')),
+                    esc(e.get('ttl')),
+                ]) + '\n'
+
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"packets_{timestamp}.csv"
+        return Response(generate(), mimetype='text/csv', headers={
+            'Content-Disposition': f'attachment; filename={filename}'
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

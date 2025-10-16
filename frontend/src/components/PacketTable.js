@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../App.css';
 
 //Colors for charts
@@ -14,6 +14,29 @@ const PROTO_COLORS = {
 };
 
 function PacketTable({stats, recentPackets}) {
+    const [open, setOpen] = useState(false);
+
+    const triggerDownload = async (limit) => {
+        try{
+            const url = limit ? `/api/export_csv?limit=${limit}` : '/api/export_csv';
+            const res = await fetch(url);
+            if(!res.ok) return;
+            const blob = await res.blob();
+            const href = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = href;
+            a.download = 'packets.csv';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(href);
+        }catch(e){
+            console.error('Export failed', e);
+        } finally {
+            setOpen(false);
+        }
+    };
+
     return(
         <>
         {/* Top Sources Tables */}
@@ -66,7 +89,19 @@ function PacketTable({stats, recentPackets}) {
         {/* Recent Packets Table */}
         <section className='recent-packets'>
             <div className='table-card full-width'>
-                <h3>Recent Packets</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3>Recent Packets</h3>
+                    <div style={{ position: 'relative' }}>
+                        <button onClick={() => setOpen(v => !v)} className='btn-export'>Export data ▾</button>
+                        {open && (
+                            <div className='export-menu'>
+                                <button onClick={() => triggerDownload(null)} className='export-item'>Export all</button>
+                                <button onClick={() => triggerDownload(1000)} className='export-item'>Export last 1000 packets</button>
+                                <button onClick={() => triggerDownload(10000)} className='export-item'>Export last 10000 packets</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
                 <div className='table-container scrollable'>
                     <table>
                         <thead>
