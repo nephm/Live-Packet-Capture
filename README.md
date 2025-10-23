@@ -1,2 +1,2 @@
 # Live-Packet-Capture
-Live network traffic analyser that capture and flag traffic using Flask server and Python with Scapy
+Live network traffic analyser that captures and flags traffic using Flask server, React front-end and Python with Scapy
